@@ -2,9 +2,11 @@
  * 
  * This is the code for the project,
  * 
- * All in One Home Automation project using ESP RainMaker made using ESP32
+ * Home Automation project using ESP RainMaker made using ESP32
  * 
  * This code was written by Arun Suthar for techiesms YouTube channel
+ * 
+ * Changes for OLD PCB done by AryanKedare
  * 
  * This code is provided free for project purpose and fair use only.
  * Do mail us if you want to use it commercially 
@@ -33,7 +35,7 @@ const char *pop = "Techiesms123"; //password
 using namespace ace_button;
 
 #define DEBUG_SW 1 // for ON/OFF serial moniter
-#define DEFAULT_RELAY_STATE false
+#define DEFAULT_RELAY_STATE true
 
 // GPIO for push button
 static uint8_t gpio_reset = 0;
@@ -50,33 +52,17 @@ static uint8_t relay2 = 2;
 static uint8_t relay3 = 4;
 static uint8_t relay4 = 22;
 
-// GPIO for Relay (Fan Speed Control)
-static uint8_t Speed1 = 21;
-static uint8_t Speed2 = 19;
-static uint8_t Speed4 = 18;
-
-// GPIO for Fan Regulator Knob
-static uint8_t s1 = 27;
-static uint8_t s2 = 14;
-static uint8_t s3 = 12;
-static uint8_t s4 = 13;
-
-bool speed1_flag = 1;
-bool speed2_flag = 1;
-bool speed3_flag = 1;
-bool speed4_flag = 1;
-bool speed0_flag = 1;
+//LEDs Status
+static uint8_t LED1 = 26;
+static uint8_t LED2 = 25;
+static uint8_t LED3 = 27;
 
 /* Variable for reading pin status*/
-bool switch_state_ch1 = false;
-bool switch_state_ch2 = false;
-bool switch_state_ch3 = false;
-bool switch_state_ch4 = false;
+bool switch_state_ch1 = true;
+bool switch_state_ch2 = true;
+bool switch_state_ch3 = true;
+bool switch_state_ch4 = true;
 
-
-int Slider_Value = 0;
-int curr_speed = 0;
-bool Fan_Switch = 0;
 bool wifi_scanning  = 0;
 
 
@@ -84,7 +70,6 @@ static Switch my_switch1("light1", &relay1);
 static Switch my_switch2("light2", &relay2);
 static Switch my_switch3("light3", &relay3);
 static Switch my_switch4("light4", &relay4);
-static Fan my_fan("Fan");
 
 ButtonConfig config1;
 AceButton button1(&config1);
@@ -138,70 +123,6 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
   const char *device_name = device->getDeviceName();
   const char *param_name = param->getParamName();
 
-  if (strcmp(device_name, "Fan") == 0)
-  {
-    if (strcmp(param_name, "Power") == 0)
-    {
-      Serial.printf("\nReceived value = %d for %s - %s\n", val.val.b, device_name, param_name);
-      Fan_Switch = val.val.b;
-      if (Fan_Switch) {
-        if (curr_speed == 0)
-        {
-          speed_0();
-        }
-        if (curr_speed == 1)
-        {
-          speed_1();
-        }
-        if (curr_speed == 2)
-        {
-          speed_2();
-        }
-        if (curr_speed == 3)
-        {
-          speed_3();
-        }
-        if (curr_speed == 4)
-        {
-          speed_4();
-        }
-      }
-      else
-        speed_0();
-    }
-
-    if (strcmp(param_name, "My_Speed") == 0)
-    {
-      Serial.printf("\nReceived value = %d for %s - %s\n", val.val.i, device_name, param_name);
-      int Slider_Value = val.val.i;
-      if (Fan_Switch)
-      {
-        if (Slider_Value == 1)
-        {
-          speed_1();
-        }
-        if (Slider_Value == 2)
-        {
-          speed_2();
-        }
-        if (Slider_Value == 3)
-        {
-          speed_3();
-        }
-        if (Slider_Value == 4)
-        {
-          speed_4();
-        }
-      }
-
-      if (Slider_Value == 0)
-      {
-        speed_0();
-      }
-      param->updateAndReport(val);
-    }
-  }
-
   if (strcmp(device_name, "light1") == 0)
   {
     Serial.printf("Switch value_1 = %s\n", val.val.b ? "true" : "false");
@@ -209,7 +130,7 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch1 = val.val.b;
-      (switch_state_ch1 == false) ? digitalWrite(relay1, LOW) : digitalWrite(relay1, HIGH);
+      (switch_state_ch1 == true) ? digitalWrite(relay1, LOW) : digitalWrite(relay1, HIGH);
       param->updateAndReport(val);
     }
 
@@ -221,7 +142,7 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch2 = val.val.b;
-      (switch_state_ch2 == false) ? digitalWrite(relay2, LOW) : digitalWrite(relay2, HIGH);
+      (switch_state_ch2 == true) ? digitalWrite(relay2, LOW) : digitalWrite(relay2, HIGH);
       param->updateAndReport(val);
     }
   }
@@ -232,7 +153,7 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch3 = val.val.b;
-      (switch_state_ch3 == false) ? digitalWrite(relay3, LOW) : digitalWrite(relay3, HIGH);
+      (switch_state_ch3 == true) ? digitalWrite(relay3, LOW) : digitalWrite(relay3, HIGH);
       param->updateAndReport(val);
     }
   }
@@ -243,7 +164,7 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch4 = val.val.b;
-      (switch_state_ch4 == false) ? digitalWrite(relay4, LOW) : digitalWrite(relay4, HIGH);
+      (switch_state_ch4 == true) ? digitalWrite(relay4, LOW) : digitalWrite(relay4, HIGH);
       param->updateAndReport(val);
     }
   }
@@ -255,26 +176,43 @@ void setup()
 
   Serial.begin(115200);
 
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(LED3, OUTPUT);
+
+  digitalWrite(LED1, HIGH);
+  delay(200);
+  digitalWrite(LED2, HIGH);
+  delay(200);
+  digitalWrite(LED3, HIGH);
+  delay(200);
+
+  digitalWrite(LED1, LOW);
+  digitalWrite(LED2, LOW);
+  digitalWrite(LED3, LOW);
+  delay(500);
+
+  digitalWrite(LED1, HIGH);
+  delay(200);
+  digitalWrite(LED2, HIGH);
+  delay(200);
+  digitalWrite(LED3, HIGH);
+  delay(200);
+
+  digitalWrite(LED1, LOW);
+  digitalWrite(LED2, LOW);
+  digitalWrite(LED3, LOW);
+
   // Configure the input GPIOs
   pinMode(gpio_reset, INPUT);
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
   pinMode(relay4, OUTPUT);
-  pinMode(Speed1, OUTPUT);
-  pinMode(Speed2, OUTPUT);
-  pinMode(Speed4, OUTPUT);
-
   pinMode(switch1, INPUT_PULLUP);
   pinMode(switch2, INPUT_PULLUP);
   pinMode(switch3, INPUT_PULLUP);
   pinMode(switch4, INPUT_PULLUP);
-
-
-  pinMode(s1, INPUT_PULLUP);
-  pinMode(s2, INPUT_PULLUP);
-  pinMode(s3, INPUT_PULLUP);
-  pinMode(s4, INPUT_PULLUP);
 
   // Write to the GPIOs the default state on booting
   digitalWrite(relay1, DEFAULT_RELAY_STATE);
@@ -294,16 +232,7 @@ void setup()
 
 
   Node my_node;
-  my_node = RMaker.initNode("All In One");
-
-  //Standard switch device
-  my_fan.addCb(write_callback);
-  Param level_param("My_Speed", "custom.param.level", value(0), PROP_FLAG_READ | PROP_FLAG_WRITE);
-  level_param.addBounds(value(0), value(4), value(1));
-  level_param.addUIType(ESP_RMAKER_UI_SLIDER);
-  my_fan.addParam(level_param);
-  my_node.addDevice(my_fan);
-  delay(500);
+  my_node = RMaker.initNode("ESP32-Rainmaker");
 
   my_switch1.addCb(write_callback);
   my_node.addDevice(my_switch1);
@@ -344,16 +273,25 @@ void loop()
 
   if (WiFi.status() != WL_CONNECTED && wifi_scanning == 1)
   {
+    Serial.println("Not Connected");
+    digitalWrite(LED1, HIGH);
+    digitalWrite(LED2, LOW);
+    digitalWrite(LED3, LOW);
     delay(500);
     Serial.print(".");
     WiFi.begin();
+  }
+  else
+  {
+   digitalWrite(LED1, HIGH);
+   digitalWrite(LED2, HIGH);
+   digitalWrite(LED3, HIGH);
   }
 
   button1.check();
   button2.check();
   button3.check();
   button4.check();
-  fan();
 
 
   // Read GPIO0 (external button to gpio_reset device
@@ -386,13 +324,13 @@ void button1Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch1 = true;
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
-      digitalWrite(relay1, HIGH);
+      digitalWrite(relay1, LOW);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch1 = false;
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
-      digitalWrite(relay1, LOW);
+      digitalWrite(relay1, HIGH);
       break;
   }
 }
@@ -404,13 +342,13 @@ void button2Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch2 = true;
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
-      digitalWrite(relay2, HIGH);
+      digitalWrite(relay2, LOW);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch2 = false;
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
-      digitalWrite(relay2, LOW);
+      digitalWrite(relay2, HIGH);
       break;
   }
 }
@@ -422,13 +360,13 @@ void button3Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch3 = true;
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
-      digitalWrite(relay3, HIGH);
+      digitalWrite(relay3, LOW);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch3 = false;
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
-      digitalWrite(relay3, LOW);
+      digitalWrite(relay3, HIGH);
       break;
   }
 }
@@ -440,137 +378,13 @@ void button4Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch4 = true;
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
-      digitalWrite(relay4, HIGH);
+      digitalWrite(relay4, LOW);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch4 = false;
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
-      digitalWrite(relay4, LOW);
+      digitalWrite(relay4, HIGH);
       break;
   }
-}
-
-
-//functions for defineing of speeds
-
-void speed_0()
-{
-  //All Relays Off - Fan at speed 0
-  if (DEBUG_SW)Serial.println("SPEED 0");
-  my_fan.updateAndReportParam("My_Speed", 0);
-  digitalWrite(Speed1, LOW);
-  digitalWrite(Speed2, LOW);
-  digitalWrite(Speed4, LOW);
-
-}
-
-void speed_1()
-{
-  //Speed1 Relay On - Fan at speed 1
-  if (DEBUG_SW)Serial.println("SPEED 1");
-  curr_speed = 1;
-  my_fan.updateAndReportParam("My_Speed", 1);
-  digitalWrite(Speed1, LOW);
-  digitalWrite(Speed2, LOW);
-  digitalWrite(Speed4, LOW);
-  delay(1000);
-  digitalWrite(Speed1, HIGH);
-}
-
-void speed_2()
-{
-  //Speed2 Relay On - Fan at speed 2
-  if (DEBUG_SW)Serial.println("SPEED 2");
-  curr_speed = 2;
-  my_fan.updateAndReportParam("My_Speed", 2);
-  digitalWrite(Speed1, LOW);
-  digitalWrite(Speed2, LOW);
-  digitalWrite(Speed4, LOW);
-  delay(1000);
-  digitalWrite(Speed2, HIGH);
-}
-
-void speed_3()
-{
-  //Speed1 & Speed2 Relays On - Fan at speed 3
-  if (DEBUG_SW)Serial.println("SPEED 3");
-  curr_speed = 3;
-  my_fan.updateAndReportParam("My_Speed", 3);
-  digitalWrite(Speed1, LOW);
-  digitalWrite(Speed2, LOW);
-  digitalWrite(Speed4, LOW);
-  delay(1000);
-  digitalWrite(Speed1, HIGH);
-  digitalWrite(Speed2, HIGH);
-
-}
-
-void speed_4()
-{
-  //Speed4 Relay On - Fan at speed 4
-  if (DEBUG_SW)Serial.println("SPEED 4");
-  curr_speed = 4;
-  my_fan.updateAndReportParam("My_Speed", 4);
-  digitalWrite(Speed1, LOW);
-  digitalWrite(Speed2, LOW);
-  digitalWrite(Speed4, LOW);
-  delay(1000);
-  digitalWrite(Speed4, HIGH);
-}
-
-
-// function for controling fan using regulator
-
-void fan()
-{
-  if (digitalRead(s1) == LOW && speed1_flag == 1)
-  {
-    speed_1();
-    speed1_flag = 0;
-    speed2_flag = 1;
-    speed3_flag = 1;
-    speed4_flag = 1;
-    speed0_flag = 1;
-
-
-  }
-  if (digitalRead(s2) == LOW && digitalRead(s3) == HIGH && speed2_flag == 1)
-  {
-    speed_2();
-    speed1_flag = 1;
-    speed2_flag = 0;
-    speed3_flag = 1;
-    speed4_flag = 1;
-    speed0_flag = 1;
-
-  }
-  if (digitalRead(s2) == LOW && digitalRead(s3) == LOW && speed3_flag == 1)
-  {
-    speed_3();
-    speed1_flag = 1;
-    speed2_flag = 1;
-    speed3_flag = 0;
-    speed4_flag = 1;
-    speed0_flag = 1;
-  }
-  if (digitalRead(s4) == LOW  && speed4_flag == 1)
-  {
-    speed_4();
-    speed1_flag = 1;
-    speed2_flag = 1;
-    speed3_flag = 1;
-    speed4_flag = 0;
-    speed0_flag = 1;
-  }
-  if (digitalRead(s1) == HIGH && digitalRead(s2) == HIGH && digitalRead(s3) == HIGH && digitalRead(s4) == HIGH  && speed0_flag == 1)
-  {
-    speed_0();
-    speed1_flag = 1;
-    speed2_flag = 1;
-    speed3_flag = 1;
-    speed4_flag = 1;
-    speed0_flag = 0;
-  }
-
 }
