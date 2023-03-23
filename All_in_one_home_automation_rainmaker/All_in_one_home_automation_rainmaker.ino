@@ -27,10 +27,12 @@
 #include <AceButton.h>
 #include <wifi_provisioning/manager.h>
 #include <esp_heap_caps.h>
+#include <Preferences.h>
+Preferences pref;
 
 //for BLE
-const char *service_name = "PROV_techiesms"; //name of node in BLE
-const char *pop = "Techiesms123"; //password
+const char *service_name = "Name"; //name of node in BLE
+const char *pop = "Password"; //password
 
 using namespace ace_button;
 
@@ -39,6 +41,12 @@ using namespace ace_button;
 
 // GPIO for push button
 static uint8_t gpio_reset = 0;
+
+// Relay State
+bool toggleState_1 = LOW; //Define integer to remember the toggle state for relay 1
+bool toggleState_2 = LOW; //Define integer to remember the toggle state for relay 2
+bool toggleState_3 = LOW; //Define integer to remember the toggle state for relay 3
+bool toggleState_4 = LOW; //Define integer to remember the toggle state for relay 4
 
 // GPIO for switch
 static uint8_t switch1 = 32;
@@ -58,18 +66,18 @@ static uint8_t LED2 = 25;
 static uint8_t LED3 = 27;
 
 /* Variable for reading pin status*/
-bool switch_state_ch1 = true;
-bool switch_state_ch2 = true;
-bool switch_state_ch3 = true;
-bool switch_state_ch4 = true;
+bool switch_state_ch1 = LOW;
+bool switch_state_ch2 = LOW;
+bool switch_state_ch3 = LOW;
+bool switch_state_ch4 = LOW;
 
 bool wifi_scanning  = 0;
 
 
-static Switch my_switch1("light1", &relay1);
-static Switch my_switch2("light2", &relay2);
-static Switch my_switch3("light3", &relay3);
-static Switch my_switch4("light4", &relay4);
+static Switch my_switch1("Switch 1", &relay1);
+static Switch my_switch2("Switch 2", &relay2);
+static Switch my_switch3("Switch 3", &relay3);
+static Switch my_switch4("Switch 4", &relay4);
 
 ButtonConfig config1;
 AceButton button1(&config1);
@@ -123,53 +131,124 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
   const char *device_name = device->getDeviceName();
   const char *param_name = param->getParamName();
 
-  if (strcmp(device_name, "light1") == 0)
+  if (strcmp(device_name, "Switch 1") == 0)
   {
     Serial.printf("Switch value_1 = %s\n", val.val.b ? "true" : "false");
 
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch1 = val.val.b;
-      (switch_state_ch1 == true) ? digitalWrite(relay1, LOW) : digitalWrite(relay1, HIGH);
+      (switch_state_ch1 == false) ? digitalWrite(relay1, LOW) : digitalWrite(relay1, HIGH);
       param->updateAndReport(val);
     }
 
   }
-  if (strcmp(device_name, "light2") == 0) {
+  if (strcmp(device_name, "Switch 2") == 0) {
 
     Serial.printf("Switch value_2 = %s\n", val.val.b ? "true" : "false");
 
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch2 = val.val.b;
-      (switch_state_ch2 == true) ? digitalWrite(relay2, LOW) : digitalWrite(relay2, HIGH);
+      (switch_state_ch2 == false) ? digitalWrite(relay2, LOW) : digitalWrite(relay2, HIGH);
       param->updateAndReport(val);
     }
   }
-  if (strcmp(device_name, "light3") == 0) {
+  if (strcmp(device_name, "Switch 3") == 0) {
 
     Serial.printf("Switch value_3 = %s\n", val.val.b ? "true" : "false");
 
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch3 = val.val.b;
-      (switch_state_ch3 == true) ? digitalWrite(relay3, LOW) : digitalWrite(relay3, HIGH);
+      (switch_state_ch3 == false) ? digitalWrite(relay3, LOW) : digitalWrite(relay3, HIGH);
       param->updateAndReport(val);
     }
   }
-  if (strcmp(device_name, "light4") == 0) {
+  if (strcmp(device_name, "Switch 4") == 0) {
 
     Serial.printf("Switch value_4 = %s\n", val.val.b ? "true" : "false");
 
     if (strcmp(param_name, "Power") == 0) {
       Serial.printf("Received value = %s for %s - %s\n", val.val.b ? "true" : "false", device_name, param_name);
       switch_state_ch4 = val.val.b;
-      (switch_state_ch4 == true) ? digitalWrite(relay4, LOW) : digitalWrite(relay4, HIGH);
+      (switch_state_ch4 == false) ? digitalWrite(relay4, LOW) : digitalWrite(relay4, HIGH);
       param->updateAndReport(val);
     }
   }
 }
 
+void getRelayState()
+{
+  toggleState_1 = pref.getBool("Relay1", 0);
+  Serial.print("Last State Relay1 - "); Serial.println(toggleState_1);
+  digitalWrite(relay1, toggleState_1);
+  my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, toggleState_1);
+  delay(200);
+  toggleState_2 = pref.getBool("Relay2", 0);
+  Serial.print("Last State Relay2- "); Serial.println(toggleState_2);
+  digitalWrite(relay2, toggleState_2);
+  my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, toggleState_2);
+  delay(200);
+  toggleState_3 = pref.getBool("Relay3", 0);
+  Serial.print("Last State Relay3- "); Serial.println(toggleState_3);
+  digitalWrite(relay3, toggleState_3);
+  my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, toggleState_3);
+  delay(200);
+  toggleState_4 = pref.getBool("Relay4", 0);
+  Serial.print("Last State Relay4- "); Serial.println(toggleState_4);
+  digitalWrite(relay4, toggleState_4);
+  my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, toggleState_4);
+  delay(200);
+}
+
+void All_Lights_Off()
+{
+  switch_state_ch1 = 0;
+  digitalWrite(relay1, LOW);
+  my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
+  pref.putBool("Relay1", switch_state_ch1);
+
+  switch_state_ch2 = 0;
+  digitalWrite(relay2, LOW);
+  my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
+  pref.putBool("Relay2", switch_state_ch2);
+
+  switch_state_ch3 = 0;
+  digitalWrite(relay3, LOW);
+  my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
+  pref.putBool("Relay3", switch_state_ch3);
+
+  switch_state_ch4 = 0;
+  digitalWrite(relay4, LOW);
+  my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
+  pref.putBool("Relay4", switch_state_ch4);
+
+}
+
+void All_Lights_On()
+{
+  switch_state_ch1 = 1;
+  digitalWrite(relay1, HIGH);
+  my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
+  pref.putBool("Relay1", switch_state_ch1);
+
+  switch_state_ch2 = 1;
+  digitalWrite(relay2, HIGH);
+  my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
+  pref.putBool("Relay2", switch_state_ch2);
+
+  switch_state_ch3 = 1;
+  digitalWrite(relay3, HIGH);
+  my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
+  pref.putBool("Relay3", switch_state_ch3);
+
+  switch_state_ch4 = 1;
+  digitalWrite(relay4, HIGH);
+  my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
+  pref.putBool("Relay4", switch_state_ch4);
+
+}
 
 void setup()
 {
@@ -232,7 +311,7 @@ void setup()
 
 
   Node my_node;
-  my_node = RMaker.initNode("ESP32-Rainmaker");
+  my_node = RMaker.initNode("ESP32-RainMaker");
 
   my_switch1.addCb(write_callback);
   my_node.addDevice(my_switch1);
@@ -261,25 +340,32 @@ void setup()
 
   Serial.printf("\nStarting ESP-RainMaker\n");
   RMaker.start();
-  delay(2000);
 
   WiFi.onEvent(sysProvEvent);
+#if CONFIG_IDF_TARGET_ESP32
   WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name);
+#else
+  WiFiProv.beginProvision(WIFI_PROV_SCHEME_SOFTAP, WIFI_PROV_SCHEME_HANDLER_NONE, WIFI_PROV_SECURITY_1, pop, service_name);
+#endif
+
+  getRelayState(); // Get the last state of Relays
+
+  my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, false);
+  my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, false);
+  my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, false);
+  my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, false);
 }
 
 
 void loop()
 {
 
-  if (WiFi.status() != WL_CONNECTED && wifi_scanning == 1)
+  if (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("Not Connected");
     digitalWrite(LED1, HIGH);
     digitalWrite(LED2, LOW);
     digitalWrite(LED3, LOW);
     delay(500);
-    Serial.print(".");
-    WiFi.begin();
   }
   else
   {
@@ -324,13 +410,13 @@ void button1Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch1 = true;
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
-      digitalWrite(relay1, LOW);
+      digitalWrite(relay1, HIGH);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch1 = false;
       my_switch1.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch1);
-      digitalWrite(relay1, HIGH);
+      digitalWrite(relay1, LOW);
       break;
   }
 }
@@ -342,13 +428,13 @@ void button2Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch2 = true;
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
-      digitalWrite(relay2, LOW);
+      digitalWrite(relay2, HIGH);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch2 = false;
       my_switch2.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch2);
-      digitalWrite(relay2, HIGH);
+      digitalWrite(relay2, LOW);
       break;
   }
 }
@@ -360,13 +446,13 @@ void button3Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch3 = true;
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
-      digitalWrite(relay3, LOW);
+      digitalWrite(relay3, HIGH);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch3 = false;
       my_switch3.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch3);
-      digitalWrite(relay3, HIGH);
+      digitalWrite(relay3, LOW);
       break;
   }
 }
@@ -378,13 +464,13 @@ void button4Handler(AceButton* button, uint8_t eventType, uint8_t buttonState) {
       Serial.println("kEventPressed");
       switch_state_ch4 = true;
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
-      digitalWrite(relay4, LOW);
+      digitalWrite(relay4, HIGH);
       break;
     case AceButton::kEventReleased:
       Serial.println("kEventReleased");
       switch_state_ch4 = false;
       my_switch4.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, switch_state_ch4);
-      digitalWrite(relay4, HIGH);
+      digitalWrite(relay4, LOW);
       break;
   }
 }
